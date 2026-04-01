@@ -7,8 +7,15 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create a non-root user to run the application.
+RUN groupadd -r app && useradd -r -g app app
+
 # Copy the application code
 COPY . .
+
+RUN chown -R app:app /app
+
+USER app
 
 EXPOSE 8080
 
