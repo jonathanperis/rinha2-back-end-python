@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 import os
 import psycopg2
 import psycopg2.pool
-import json
 from datetime import datetime
 
 app = Flask(__name__)
@@ -69,8 +68,8 @@ def get_extrato(client_id):
             }
 
             return jsonify(extrato)
-    except Exception as e:
-        return f"Error reading from database: {e}", 500
+    except Exception:
+        return "Internal server error", 500
     finally:
         pool.putconn(conn)
 
@@ -103,12 +102,12 @@ def post_transacao(client_id):
                 return "Client not found", 404
             current_saldo = row[0]
 
-            # Calculate new balance
+            # Calculate new balance and enforce debit limit
             if tipo == 'c':
-                new_saldo = current_saldo + int(valor)
+                projected_saldo = current_saldo + int(valor)
             else:  # 'd'
-                new_saldo = current_saldo - int(valor)
-                if new_saldo < -clientes[client_id]:
+                projected_saldo = current_saldo - int(valor)
+                if projected_saldo < -clientes[client_id]:
                     return "Limite ultrapassado!", 422
 
             # Call the stored function InsertTransacao.
@@ -123,9 +122,9 @@ def post_transacao(client_id):
                 "saldo": updated_saldo
             }
             return jsonify(cliente_dto)
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return f"Database error inserting transaction: {e}", 500
+        return "Internal server error", 500
     finally:
         pool.putconn(conn)
 
