@@ -102,10 +102,8 @@ def post_transacao(client_id):
                 return "Client not found", 404
             current_saldo = row[0]
 
-            # Calculate new balance and enforce debit limit
-            if tipo == 'c':
-                projected_saldo = current_saldo + int(valor)
-            else:  # 'd'
+            # Enforce debit limit
+            if tipo == 'd':
                 projected_saldo = current_saldo - int(valor)
                 if projected_saldo < -clientes[client_id]:
                     return "Limite ultrapassado!", 422
