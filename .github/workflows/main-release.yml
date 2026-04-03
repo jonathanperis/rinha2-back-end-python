@@ -4,6 +4,7 @@ name: Main Release
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 on:
   push:
