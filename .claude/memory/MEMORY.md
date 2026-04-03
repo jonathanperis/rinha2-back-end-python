@@ -1,0 +1,1 @@
+- [Architecture](architecture.md) — Flask/Gunicorn single-file design, psycopg2 pooling, worker config, shared infra
