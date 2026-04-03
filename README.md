@@ -98,7 +98,7 @@ rinha2-back-end-python/
 | Build Check | Pull requests | Docker build + health check (20 retries) |
 | Main Release | Push to main | Multi-platform Docker push (amd64/arm64) to GHCR + k6 load test |
 | CodeQL | Push to main, PRs, weekly | Security and quality analysis |
-| Deploy Docs | Push to main, wiki changes | Generate and publish documentation |
+| Deploy | Push to main | Deploy docs to GitHub Pages via Actions |
 
 Container image: `ghcr.io/jonathanperis/rinha2-back-end-python:latest`
 
