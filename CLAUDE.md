@@ -95,3 +95,12 @@ rinha2-back-end-python/
 | Variable | Value |
 |----------|-------|
 | `DATABASE_URL` | `postgres://postgres:postgres@db:5432/rinha?sslmode=disable` |
+
+---
+
+## Workflow Conventions
+
+- **Branch + PR strategy**: All changes must go through a feature branch and pull request — never commit directly to main
+- **Rebase-only merges**: PRs use rebase merge strategy (no merge commits, no squash)
+- **GitHub CLI**: Always use `gh` CLI for GitHub operations (repos, PRs, issues, releases, checks)
+- **Community health files**: Repo-wide files (CODE_OF_CONDUCT, CONTRIBUTING, SECURITY, PR templates) live in the `jonathanperis/.github` org repo — do not create them in this repository

@@ -1,1 +1,4 @@
 - [Architecture](architecture.md) — Flask/Gunicorn single-file design, psycopg2 pooling, worker config, shared infra
+- [Workflow Conventions](feedback_workflow.md) — Branch+PR required, rebase-only merges, gh CLI for GitHub ops
+- [GitHub Org Repo](reference_github_org.md) — Community health files live in jonathanperis/.github, never per-repo
+- [Jonathan Peris](user_jonathan.md) — Multi-language rinha implementations, clean repo structure, automated workflows

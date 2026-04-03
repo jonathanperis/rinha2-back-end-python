@@ -1,30 +1,48 @@
 # rinha2-back-end-python
 
-> Python implementation for the Rinha de Backend 2024/Q1 challenge with PostgreSQL stored procedures and Nginx load balancing
+> High-performance banking API built with Python, Flask, and PostgreSQL for the Rinha de Backend 2024/Q1 challenge
 
-[![CI](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/build-check-webapi.yml/badge.svg)](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/build-check-webapi.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Check](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/build-check.yml/badge.svg)](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/build-check.yml) [![Main Release](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/main-release.yml/badge.svg)](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/main-release.yml) [![CodeQL](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/codeql.yml/badge.svg)](https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/codeql.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**[Live demo →](https://jonathanperis.github.io/rinha2-back-end-python/reports/)** | **[Documentation →](https://jonathanperis.github.io/rinha2-back-end-python/)**
 
 ---
 
 ## About
 
-A Python implementation of the Brazilian backend challenge Rinha de Backend 2024/Q1, where a fictional bank API must handle concurrent transactions under strict resource constraints (1.5 CPU, 550MB RAM total). Uses PostgreSQL stored procedures for business logic and Nginx for load balancing across two API instances. Built for learning purposes.
+Python implementation of the Brazilian backend challenge [Rinha de Backend 2024/Q1](https://github.com/zanfranceschi/rinha-de-backend-2024-q1), where a fictional bank API must handle concurrent transactions under strict resource constraints (1.5 CPU, 550MB RAM total). Uses PostgreSQL stored procedures for atomic business logic and Nginx for load balancing across two API instances.
 
 ## Tech Stack
 
 | Technology | Version | Purpose |
 |-----------|---------|---------|
-| Python | - | API implementation |
-| PostgreSQL | - | Database with stored procedures |
-| Nginx | - | Reverse proxy and load balancer (least-conn) |
+| Python | 3.14 | Language runtime |
+| Flask | 3.1.3 | Web framework |
+| Gunicorn | 25.3.0 | WSGI HTTP server (4 workers, 2 threads) |
+| psycopg2-binary | 2.9.11 | PostgreSQL adapter |
+| PostgreSQL | 16.7 | Database with stored procedures |
+| NGINX | 1.27 | Reverse proxy / load balancer (least_conn) |
 | Docker | - | Containerization and orchestration |
-| k6 | - | Stress testing |
+| k6 | - | Load / stress testing |
+
+## Architecture
+
+```
+NGINX (:9999, least_conn)
+├── webapi1-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w x 2t
+├── webapi2-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w x 2t
+└── PostgreSQL (0.5 CPU, 330MB)
+    ├── InsertTransacao() — atomic balance + validation
+    └── GetSaldoClienteById() — statement with JSONB
+```
 
 ## Features
 
-- PostgreSQL stored procedures for server-side business logic
-- PostgreSQL tuned with synchronous_commit=0, fsync=0, full_page_writes=0
-- Nginx least-conn load balancing across two API instances
+- PostgreSQL stored procedures for atomic server-side business logic
+- PostgreSQL tuned for throughput: `synchronous_commit=0`, `fsync=0`, `full_page_writes=0`
+- UNLOGGED tables for maximum write performance
+- Nginx least_conn load balancing across two API instances
+- SimpleConnectionPool (1-10) for efficient connection management
 - All requests under 800ms at 250MB RAM usage (60% below limit)
 
 ## Getting Started
@@ -43,23 +61,46 @@ docker compose up nginx -d --build
 
 API available at `http://localhost:9999`
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/clientes/{id}/transacoes` | POST | Submit debit or credit transaction |
-| `/clientes/{id}/extrato` | GET | Get account balance statement |
+### Run Stress Tests
+
+```bash
+docker compose up k6 --build --force-recreate
+```
+
+## API Endpoints
+
+| Method | Path | Description | Status Codes |
+|--------|------|-------------|-------------|
+| POST | `/clientes/{id}/transacoes` | Submit debit or credit transaction | 200, 404, 422 |
+| GET | `/clientes/{id}/extrato` | Get account balance statement | 200, 404 |
+| GET | `/healthz` | Health check | 200 |
 
 ## Project Structure
 
 ```
 rinha2-back-end-python/
-├── src/WebApi/         — API implementation
-├── docker-compose.yml  — Full stack: API x2, Nginx, PostgreSQL, k6, observability
-└── .github/workflows/  — CI/CD pipelines
+├── src/WebApi/
+│   ├── app.py             # Complete API (Flask application)
+│   ├── requirements.txt   # Flask, psycopg2-binary, gunicorn
+│   └── Dockerfile         # python:3.14-slim, non-root user
+├── docker-entrypoint-initdb.d/
+│   └── rinha.dump.sql     # Schema + stored procedures + seed data
+├── docker-compose.yml     # Dev stack with observability
+├── prod/docker-compose.yml # Prod stack with GHCR images
+├── nginx.conf             # Load balancer config
+└── .github/workflows/     # CI/CD pipelines
 ```
 
 ## CI/CD
 
-Two GitHub Actions workflows: `build-check-webapi.yml` runs on pull requests to build and health-check the API, and `main-release-webapi.yml` runs on the main branch to build a multi-platform Docker image and push it to GHCR.
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| Build Check | Pull requests | Docker build + health check (20 retries) |
+| Main Release | Push to main | Multi-platform Docker push (amd64/arm64) to GHCR + k6 load test |
+| CodeQL | Push to main, PRs, weekly | Security and quality analysis |
+| Deploy Docs | Push to main, wiki changes | Generate and publish documentation |
+
+Container image: `ghcr.io/jonathanperis/rinha2-back-end-python:latest`
 
 ## License
 
