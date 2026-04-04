@@ -90,29 +90,16 @@ def post_transacao(client_id):
     if not is_transacao_valid(valor, tipo, descricao):
         return "Invalid transaction data", 422
 
-    # For debit transactions, check the business rule:
-    # o débito não pode deixar o saldo menor que -limite
     conn = pool.getconn()
     try:
         with conn.cursor() as cur:
-            # Get the current balance
-            cur.execute('SELECT "SaldoInicial" FROM public."Clientes" WHERE "Id" = %s', (client_id,))
-            row = cur.fetchone()
-            if row is None:
-                return "Client not found", 404
-            current_saldo = row[0]
-
-            # Enforce debit limit
-            if tipo == 'd':
-                projected_saldo = current_saldo - int(valor)
-                if projected_saldo < -clientes[client_id]:
-                    return "Limite ultrapassado!", 422
-
-            # Call the stored function InsertTransacao.
+            # Limit validation and balance update are handled atomically in InsertTransacao()
+            # via SELECT FOR UPDATE — no Python pre-check needed.
             cur.execute("SELECT InsertTransacao(%s, %s, %s, %s)", (client_id, valor, tipo, descricao))
             updated_saldo_row = cur.fetchone()
-            if updated_saldo_row is None:
-                return "Database error inserting transaction", 500
+            if updated_saldo_row is None or updated_saldo_row[0] is None:
+                conn.rollback()
+                return "Limite ultrapassado!", 422
             updated_saldo = updated_saldo_row[0]
             conn.commit()
             cliente_dto = {

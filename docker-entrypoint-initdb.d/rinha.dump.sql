@@ -74,32 +74,27 @@ CREATE OR REPLACE FUNCTION public.InsertTransacao(
 ) RETURNS INTEGER AS $$
 DECLARE
     novo_saldo INTEGER;
-    cliente_exists BOOLEAN;
+    client_limite INTEGER;
 BEGIN
-    -- Check if the client exists
-    SELECT EXISTS (SELECT 1 FROM public."Clientes" WHERE "Id" = id) INTO cliente_exists;
-    IF NOT cliente_exists THEN
-        RETURN NULL;
+    -- Lock the client row to serialize concurrent transactions on the same client.
+    -- Concurrent calls for the same id will queue here until the lock is released.
+    SELECT "SaldoInicial", "Limite" INTO novo_saldo, client_limite
+    FROM public."Clientes" WHERE "Id" = id FOR UPDATE;
+
+    -- Enforce debit limit atomically (we hold the lock, no concurrent read can race)
+    IF tipo = 'd' AND (novo_saldo - valor) < -client_limite THEN
+        RETURN NULL; -- signals limit exceeded to caller
     END IF;
 
-    -- Update balance with the original's condition to allow credits unconditionally
+    -- Update balance
     UPDATE public."Clientes"
     SET "SaldoInicial" = "SaldoInicial" + (valor * CASE tipo WHEN 'c' THEN 1 ELSE -1 END)
     WHERE "Id" = id
-    AND (
-        ("SaldoInicial" + (valor * CASE tipo WHEN 'c' THEN 1 ELSE -1 END) >= -"Limite")
-        OR (valor * CASE tipo WHEN 'c' THEN 1 ELSE -1 END) > 0
-    )
     RETURNING "SaldoInicial" INTO novo_saldo;
 
-    -- Insert transaction only if the client exists (handled above) and balance was updated
-    IF FOUND THEN
-        INSERT INTO public."Transacoes" ("Valor", "Tipo", "Descricao", "ClienteId", "RealizadoEm")
-        VALUES (valor, tipo, descricao, id, NOW());
-    ELSE
-        -- If update failed (debit exceeds limit), return current balance without updating
-        SELECT "SaldoInicial" INTO novo_saldo FROM public."Clientes" WHERE "Id" = id;
-    END IF;
+    -- Insert transaction record
+    INSERT INTO public."Transacoes" ("Valor", "Tipo", "Descricao", "ClienteId", "RealizadoEm")
+    VALUES (valor, tipo, descricao, id, NOW());
 
     RETURN novo_saldo;
 END;
