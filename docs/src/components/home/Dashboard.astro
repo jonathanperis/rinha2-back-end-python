@@ -2,33 +2,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-interface Stat {
-  value: string;
-  label: string;
-}
-
-interface ArchCard {
-  title: string;
-  description: string;
-}
-
-const stats: Stat[] = [
-  { value: '47k+', label: 'Target Requests' },
-  { value: '1.5', label: 'Max CPU Limit' },
-  { value: '550MB', label: 'Max RAM Limit' }
-];
-
-const archCards: ArchCard[] = [
-  {
-    title: 'Architecture',
-    description: '2x API Instances, 1x Nginx LB, 1x Postgres Database.'
-  },
-  {
-    title: 'The Challenge',
-    description: 'Build a fictional bank API handling concurrent transactions with high throughput and data consistency.'
-  }
-];
-
 const stressTestMetrics = [
   { value: '47k+', label: 'Requests/Second' },
   { value: '<50ms', label: 'P95 Latency' },
@@ -57,23 +30,33 @@ const recentReports = allReports.slice(0, 8).map(file => ({
 }));
 ---
 
-<section class="dashboard">
-  <div class="stats-grid">
-    {stats.map(stat => (
-      <div class="stat-item">
-        <h3>{stat.value}</h3>
-        <p>{stat.label}</p>
-      </div>
-    ))}
-  </div>
+<section class="code-block">
+  <pre><code><span class="keyword">class</span> ChallengeConstraints:
+    <span class="comment"># System Topology</span>
+    API_INSTANCES = <span class="string">2</span>
+    LOAD_BALANCER = <span class="string">"Nginx"</span>
+    DATABASE = <span class="string">"Postgres"</span>
 
-  <div class="arch-info">
-    {archCards.map(card => (
-      <div class="arch-card">
-        <h4>{card.title}</h4>
-        <p>{card.description}</p>
-      </div>
-    ))}
+    <span class="comment"># Resource Limits</span>
+    MAX_CPU = <span class="string">1.5</span>
+    MAX_RAM_MB = <span class="string">550</span>
+
+    <span class="comment"># Goal</span>
+    TARGET_REQUESTS = <span class="string">47000</span></code></pre>
+</section>
+
+<section class="features">
+  <div class="card">
+    <h3>Extreme Constraints</h3>
+    <p>Limited to 1.5 CPU cores and 550MB RAM across the ENTIRE stack (2 APIs, 1 Nginx, 1 DB).</p>
+  </div>
+  <div class="card">
+    <h3>High Throughput</h3>
+    <p>Designed to handle intense Gatling load tests aiming for 47k+ successful financial transactions.</p>
+  </div>
+  <div class="card">
+    <h3>Python Async</h3>
+    <p>Leveraging asynchronous Python paradigms for non-blocking database and network operations.</p>
   </div>
 </section>
 
