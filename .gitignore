@@ -180,3 +180,4 @@ cython_debug/
 wiki/
 node_modules/
 package-lock.json
+!docs/package-lock.json
