@@ -177,7 +177,6 @@ cython_debug/
 *.DS_Store
 
 # Docs generation
-wiki/
 node_modules/
 package-lock.json
 !docs/package-lock.json
