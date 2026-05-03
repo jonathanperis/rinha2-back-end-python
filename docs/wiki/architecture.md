@@ -7,7 +7,7 @@
 | Python | 3.14 | Language runtime |
 | Flask | 3.1.3 | Web framework |
 | Gunicorn | 25.3.0 | WSGI HTTP server (4 workers, 2 threads) |
-| psycopg2-binary | 2.9.11 | PostgreSQL adapter |
+| psycopg2-binary | 2.9.12 | PostgreSQL adapter |
 | PostgreSQL | 16.7 | Database with stored procedures |
 | NGINX | 1.27 | Reverse proxy / load balancer (least_conn) |
 | Docker | - | Containerization (python:3.14-slim base) |
