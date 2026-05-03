@@ -2,7 +2,14 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import '../../styles/docs.css';
 
-const ORDER = ['home', 'architecture', 'challenge', 'ci-cd-pipeline', 'getting-started', 'performance'];
+const SECTION_CATEGORIES = [
+  { label: '', ids: ['home'] },
+  { label: 'Overview', ids: ['architecture', 'challenge'] },
+  { label: 'Develop', ids: ['getting-started', 'performance', 'ci-cd-pipeline'] },
+];
+
+const SECTION_ORDER = SECTION_CATEGORIES.flatMap(({ ids }) => ids);
+
 const SLUG_LABEL: Record<string, string> = {
   home: 'Home',
   architecture: 'Architecture',
@@ -20,12 +27,25 @@ for (const [path, module] of Object.entries(globResult)) {
   pagesBySlug[fileName] = module;
 }
 
+// Build-time assertion: validate SECTION_CATEGORIES IDs against discovered slugs
+const availableSlugs = new Set(Object.keys(pagesBySlug));
+for (const cat of SECTION_CATEGORIES) {
+  for (const id of cat.ids) {
+    if (!availableSlugs.has(id)) {
+      const catName = cat.label || 'root';
+      throw new Error(
+        `SECTION_CATEGORIES references id "${id}" (category: "${catName}") but no matching wiki/${id}.md was found. Available slugs: ${Array.from(availableSlugs).join(', ')}`
+      );
+    }
+  }
+}
+
 const requestedSlug = Astro.params.slug;
 const isRoot = requestedSlug === undefined;
 const requestedKey = requestedSlug ?? 'home';
 
 const sectionsToRender = isRoot
-  ? ORDER
+  ? SECTION_ORDER
       .map(slug => ({ slug, page: pagesBySlug[slug] }))
       .filter(s => s.page)
   : (() => {
@@ -35,10 +55,9 @@ const sectionsToRender = isRoot
     })();
 
 export function getStaticPaths() {
-  const order = ['home', 'architecture', 'challenge', 'ci-cd-pipeline', 'getting-started', 'performance'];
   return [
     { params: { slug: undefined } },
-    ...order.filter(s => s !== 'home').map(slug => ({ params: { slug } })),
+    ...SECTION_ORDER.filter(s => s !== 'home').map(slug => ({ params: { slug } })),
   ];
 }
 
@@ -70,18 +89,23 @@ const backHomeUrl = base.replace(/\/$/, '') + '/';
       <input type="text" id="searchInput" class="search-box" placeholder="Search documentation..." aria-label="Search documentation" hidden={!isRoot}>
     </div>
     <div class="sidebar-nav-container">
-      <ul>
-        {ORDER.map(slug => {
-          const label = SLUG_LABEL[slug];
-          return (
-            <li>
-              <a href={`${docsBase}/#${slug}`} class="nav-item" data-section={slug}>
-                {label}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+      {SECTION_CATEGORIES.map((cat) => {
+        const catIds = cat.ids;
+        return (
+          <div class="sidebar-category-group" data-category>
+            {cat.label && <div class="sidebar-category">{cat.label}</div>}
+            <ul>
+              {catIds.map((id) => (
+                <li>
+                  <a class="nav-item" href={`${docsBase}/#${id}`} data-nav-id={id}>
+                    {SLUG_LABEL[id]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
     </div>
     <div class="sidebar-footer">
       <a href={backHomeUrl} class="back-home">← Back to home</a>
@@ -145,8 +169,8 @@ const backHomeUrl = base.replace(/\/$/, '') + '/';
             if (entry.isIntersecting) {
               const sectionId = entry.target.id;
               navItems.forEach(item => {
-                item.classList.toggle('active', item.dataset.section === sectionId);
-                if (item.dataset.section === sectionId) {
+                item.classList.toggle('active', item.dataset.navId === sectionId);
+                if (item.dataset.navId === sectionId) {
                   item.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'nearest' });
                 }
               });
@@ -174,13 +198,21 @@ const backHomeUrl = base.replace(/\/$/, '') + '/';
 
             if (query === '') {
               sections.forEach(s => s.classList.remove('hidden-section'));
-              navItems.forEach(item => item.parentElement.style.display = '');
+              navItems.forEach(item => {
+                item.style.display = '';
+                item.parentElement.style.display = '';
+              });
+              document.querySelectorAll('.sidebar-category-group').forEach(group => {
+                group.style.display = '';
+                const catLabel = group.querySelector('.sidebar-category');
+                if (catLabel) catLabel.style.display = '';
+              });
               return;
             }
 
             sections.forEach(section => {
               const text = section.textContent?.toLowerCase() ?? '';
-              const navItem = document.querySelector(`.nav-item[data-section="${section.id}"]`);
+              const navItem = document.querySelector(`.nav-item[data-nav-id="${section.id}"]`);
               const li = navItem ? navItem.parentElement : null;
 
               if (text.includes(query)) {
@@ -190,6 +222,22 @@ const backHomeUrl = base.replace(/\/$/, '') + '/';
                 section.classList.add('hidden-section');
                 if (li) li.style.display = 'none';
               }
+            });
+
+            // Hide empty categories
+            document.querySelectorAll('.sidebar-category-group').forEach(group => {
+              const items = group.querySelectorAll('.nav-item');
+              let visibleCount = 0;
+              items.forEach(item => {
+                const id = item.dataset.navId;
+                const sec = document.getElementById(id ?? '');
+                const vis = !sec || !sec.classList.contains('hidden-section');
+                item.style.display = vis ? '' : 'none';
+                if (vis) visibleCount++;
+              });
+              const catLabel = group.querySelector('.sidebar-category');
+              if (catLabel) catLabel.style.display = visibleCount === 0 ? 'none' : '';
+              group.style.display = visibleCount === 0 ? 'none' : '';
             });
           });
         }
