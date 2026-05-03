@@ -15,7 +15,7 @@
 
 ## Overview
 
-```
+```text
 NGINX (:9999, least_conn)
 ├── webapi1-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w x 2t
 ├── webapi2-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w x 2t
@@ -53,6 +53,6 @@ The API uses psycopg2 `SimpleConnectionPool` with 1-10 connections per instance 
 
 ## Gunicorn Configuration
 
-```
+```text
 --workers=4 --threads=2 --worker-class=sync --bind=0.0.0.0:8080 --timeout=30
 ```
