@@ -12,12 +12,14 @@ const {
   description = 'High-performance banking API for the Rinha de Backend challenge. Built with Python 3.14, Flask 3.1, and Gunicorn. Handles concurrent transactions under strict resource constraints (1.5 CPU, 550MB RAM).'
 } = Astro.props;
 
+const pageUrl = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : `https://jonathanperis.github.io${Astro.url.pathname}`;
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareSourceCode',
   'name': 'Rinha de Backend — Python',
   'description': description,
-  'url': 'https://jonathanperis.github.io/rinha2-back-end-python/',
+  'url': pageUrl,
   'codeRepository': 'https://github.com/jonathanperis/rinha2-back-end-python',
   'programmingLanguage': 'Python',
   'runtimePlatform': 'Python 3.14',
@@ -40,14 +42,14 @@ const jsonLd = {
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <meta name="description" content={description} />
     <meta name="keywords" content="Python, Flask, Gunicorn, psycopg2, PostgreSQL, banking API, Rinha de Backend, performance, load testing" />
-    <link rel="canonical" href="https://jonathanperis.github.io/rinha2-back-end-python/" />
+    <link rel="canonical" href={pageUrl} />
     <meta name="theme-color" content="#4B8BBE" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content="https://jonathanperis.github.io/rinha2-back-end-python/" />
+    <meta property="og:url" content={pageUrl} />
     <meta property="og:site_name" content="rinha2-back-end-python" />
     <meta property="og:locale" content="en_US" />
 
