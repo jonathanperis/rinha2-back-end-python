@@ -53,6 +53,6 @@ The API uses psycopg2 `SimpleConnectionPool` with 1-10 connections per instance 
 
 ## Gunicorn Configuration
 
-```text
+```bash
 --workers=4 --threads=2 --worker-class=sync --bind=0.0.0.0:8080 --timeout=30
 ```
