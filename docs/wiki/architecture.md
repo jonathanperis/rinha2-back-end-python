@@ -5,54 +5,68 @@
 | Technology | Version | Purpose |
 |-----------|---------|---------|
 | Python | 3.14 | Language runtime |
-| Flask | 3.1.3 | Web framework |
-| Gunicorn | 25.3.0 | WSGI HTTP server (4 workers, 2 threads) |
-| psycopg2-binary | 2.9.12 | PostgreSQL adapter |
-| PostgreSQL | 16.7 | Database with stored procedures |
-| NGINX | 1.27 | Reverse proxy / load balancer (least_conn) |
-| Docker | - | Containerization (python:3.14-slim base) |
+| Flask | 3.1.3 | Lightweight HTTP routing and JSON responses |
+| Gunicorn | 25.3.0 | WSGI HTTP server (`4` workers, `2` threads) |
+| psycopg2-binary | 2.9.12 | PostgreSQL adapter and connection pool |
+| PostgreSQL | 16.7 | Database with stored procedures and row-level locking |
+| NGINX | 1.27 | Reverse proxy / load balancer (`least_conn`) |
+| Docker | - | Containerization (`python:3.14-slim` base) |
 | k6 | - | Load / stress testing |
 
-## Overview
+## Runtime Topology
 
 ```text
-NGINX (:9999, least_conn)
-├── webapi1-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w x 2t
-├── webapi2-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w x 2t
-└── PostgreSQL (0.5 CPU, 330MB)
-    ├── InsertTransacao() — atomic balance + validation
-    └── GetSaldoClienteById() — statement with JSONB
+client / k6
+   │
+   ▼
+NGINX (:9999, least_conn, 0.2 CPU, 20MB)
+├── webapi1-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w × 2t
+├── webapi2-python (:8080, 0.4 CPU, 100MB) — Gunicorn 4w × 2t
+└── PostgreSQL 16.7 (0.5 CPU, 330MB)
+    ├── InsertTransacao() — atomic balance update + limit validation
+    └── GetSaldoClienteById() — statement projection with JSONB
 ```
 
-## Services
+## Request Flow
+
+1. NGINX receives traffic on `:9999` and routes to the API instance with the fewest active connections.
+2. Flask validates the route, client ID, JSON payload shape, transaction type, and description length.
+3. psycopg2 checks out a connection from a `SimpleConnectionPool(1, 10)` inside the API process.
+4. PostgreSQL stored procedures perform the balance mutation or statement projection.
+5. The API commits successful transactions, rolls back failures, returns the compact response, and releases the connection.
+
+## Services and Resource Envelope
 
 | Service | Role | CPU | RAM |
 |---------|------|-----|-----|
-| webapi1 | Python API instance (Gunicorn 4w x 2t) | 0.4 | 100MB |
-| webapi2 | Python API instance (Gunicorn 4w x 2t) | 0.4 | 100MB |
-| nginx | Reverse proxy / load balancer (least_conn) | 0.2 | 20MB |
-| postgresql | Database with stored procedures | 0.5 | 330MB |
-| k6 | Load testing | (not counted) | (not counted) |
-| grafana + influxdb | Observability dashboards | (not counted) | (not counted) |
+| `webapi1-python` | Python API instance (Gunicorn `4w × 2t`) | `0.4` | `100MB` |
+| `webapi2-python` | Python API instance (Gunicorn `4w × 2t`) | `0.4` | `100MB` |
+| `nginx` | Reverse proxy / load balancer (`least_conn`) | `0.2` | `20MB` |
+| `db` | PostgreSQL 16.7 with stored procedures | `0.5` | `330MB` |
+| `k6` | Load testing runner | not counted | not counted |
+| `grafana`, `influxdb`, `prometheus` | Local observability loop | not counted | not counted |
 
-## Load Balancing
+## Database Responsibilities
 
-Nginx uses `least_conn` strategy to distribute requests across the two API instances.
+Business logic is implemented in PostgreSQL stored procedures (`InsertTransacao`, `GetSaldoClienteById`). The database owns the race-sensitive parts of the challenge:
 
-## Database
+- Atomic debit/credit application.
+- Credit-limit rejection for invalid debit outcomes.
+- Recent-transaction selection for statement responses.
+- JSON-shaped statement data returned to the API.
 
-Business logic is implemented in PostgreSQL stored procedures (`InsertTransacao`, `GetSaldoClienteById`). The database uses UNLOGGED tables and is tuned for maximum write performance:
+For benchmark speed, the database is tuned with durability trade-offs:
 
-- `synchronous_commit=0` — no wait for WAL flush
-- `fsync=0` — skip fsync on writes
-- `full_page_writes=0` — skip full page writes
+- `synchronous_commit=0` — do not wait for WAL flush.
+- `fsync=0` — skip fsync on writes.
+- `full_page_writes=0` — skip full-page writes.
 
-## Connection Management
-
-The API uses psycopg2 `SimpleConnectionPool` with 1-10 connections per instance for efficient database access.
+These settings are useful for the contest-style load test and are not production-safe for real banking data.
 
 ## Gunicorn Configuration
 
 ```bash
 --workers=4 --threads=2 --worker-class=sync --bind=0.0.0.0:8080 --timeout=30
 ```
+
+Each API container therefore exposes multiple synchronous workers while keeping the Python layer intentionally small: validation, stored-procedure calls, response mapping, and connection cleanup.
