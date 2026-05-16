@@ -2,99 +2,182 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const stressTestMetrics = [
-  { value: '47k+', label: 'Requests/Second' },
-  { value: '<50ms', label: 'P95 Latency' },
-  { value: '99.9%', label: 'Success Rate' }
+const proofStrip = [
+  { label: 'Language', value: 'Python 3.14' },
+  { label: 'API', value: 'Flask + Gunicorn' },
+  { label: 'Database', value: 'PostgreSQL procedures' },
+  { label: 'Edge', value: 'NGINX least_conn' },
+  { label: 'Load test', value: 'k6 reports' }
+];
+
+const implementationCards = [
+  {
+    title: 'Atomic database path',
+    body: 'Business rules live in PostgreSQL stored procedures so debits, credits, limits, and balances resolve inside one transactional boundary.',
+    meta: 'PostgreSQL 16.7 · psycopg2 pool'
+  },
+  {
+    title: 'Two WSGI API replicas',
+    body: 'The Python service runs as two Flask/Gunicorn containers behind NGINX, tuned for the challenge CPU and memory split.',
+    meta: '4 workers × 2 threads per API'
+  },
+  {
+    title: 'Constraint-first validation',
+    body: 'The site links directly to k6-generated HTML reports and the release workflow so performance claims stay tied to run artifacts.',
+    meta: 'CI stress tests · report archive'
+  }
 ];
 
 const reportsDir = path.join(process.cwd(), 'public/reports');
-const allReports = fs.readdirSync(reportsDir)
-  .filter(f => f.endsWith('.html'))
-  .sort()
-  .reverse();
+const allReports = fs.existsSync(reportsDir)
+  ? fs.readdirSync(reportsDir)
+    .filter((f) => f.endsWith('.html'))
+    .sort()
+    .reverse()
+  : [];
 
 function parseReportMeta(filename: string) {
   const match = filename.match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
-  if (!match) return { date: filename, time: '' };
+  if (!match) return { date: filename, time: '', label: 'Report' };
   const [, year, month, day, hour, minute] = match;
   return {
     date: `${year}-${month}-${day}`,
-    time: `${hour}:${minute}`,
+    time: `${hour}:${minute} UTC`,
+    label: `k6 report ${year}-${month}-${day} ${hour}:${minute} UTC`,
   };
 }
 
-const recentReports = allReports.slice(0, 8).map(file => ({
+const latestReport = allReports[0]
+  ? { file: allReports[0], ...parseReportMeta(allReports[0]) }
+  : null;
+const recentReports = allReports.slice(0, 6).map((file) => ({
   file,
   ...parseReportMeta(file),
 }));
+
+const benchmarkMetrics = [
+  {
+    value: '47k+',
+    label: 'successful requests',
+    context: 'Historical target tracked by k6 reports'
+  },
+  {
+    value: String(allReports.length),
+    label: 'archived stress runs',
+    context: 'Static HTML reports published with the site'
+  },
+  {
+    value: '1.5 / 550',
+    label: 'CPU cores / MB RAM',
+    context: 'Full-stack resource envelope'
+  }
+];
 ---
 
-<section class="code-block">
-  <pre><code><span class="keyword">class</span> ChallengeConstraints:
-    <span class="comment"># System Topology</span>
-    API_INSTANCES = <span class="string">2</span>
-    LOAD_BALANCER = <span class="string">"Nginx"</span>
-    DATABASE = <span class="string">"Postgres"</span>
-
-    <span class="comment"># Resource Limits</span>
-    MAX_CPU = <span class="string">1.5</span>
-    MAX_RAM_MB = <span class="string">550</span>
-
-    <span class="comment"># Goal</span>
-    TARGET_REQUESTS = <span class="string">47000</span></code></pre>
+<section class="proof-strip" aria-label="Source-backed implementation facts">
+  {proofStrip.map((item) => (
+    <div class="proof-item">
+      <span>{item.label}</span>
+      <strong>{item.value}</strong>
+    </div>
+  ))}
 </section>
 
-<section class="features">
-  <div class="card">
-    <h3>Extreme Constraints</h3>
-    <p>Limited to 1.5 CPU cores and 550MB RAM across the ENTIRE stack (2 APIs, 1 Nginx, 1 DB).</p>
+<section class="code-block" aria-labelledby="constraints-title">
+  <div class="section-kicker">source-backed constraints</div>
+  <h2 id="constraints-title">The whole stack fits inside the contest envelope.</h2>
+  <pre><code><span class="keyword">class</span> ChallengeEnvelope:
+    <span class="comment"># Rinha de Backend 2024/Q1</span>
+    TOTAL_CPU = <span class="string">1.5</span>
+    TOTAL_RAM_MB = <span class="string">550</span>
+
+    <span class="comment"># Request path</span>
+    EDGE = <span class="string">"NGINX"</span>
+    API_REPLICAS = <span class="string">2</span>
+    API_RUNTIME = <span class="string">"Flask + Gunicorn"</span>
+    DATABASE = <span class="string">"PostgreSQL procedures"</span>
+
+    <span class="comment"># Validation</span>
+    STRESS_TOOL = <span class="string">"k6"</span>
+    REPORTS_ARCHIVED = <span class="string">{allReports.length}</span></code></pre>
+</section>
+
+<section class="features" aria-labelledby="implementation-title">
+  <div class="section-heading">
+    <p class="section-kicker">implementation mechanisms</p>
+    <h2 id="implementation-title">Not async theater. A measured WSGI and Postgres path.</h2>
   </div>
-  <div class="card">
-    <h3>High Throughput</h3>
-    <p>Designed to handle intense Gatling load tests aiming for 47k+ successful financial transactions.</p>
-  </div>
-  <div class="card">
-    <h3>Python Async</h3>
-    <p>Leveraging asynchronous Python paradigms for non-blocking database and network operations.</p>
+
+  <div class="feature-grid">
+    {implementationCards.map((card) => (
+      <article class="card">
+        <span class="card-meta">{card.meta}</span>
+        <h3>{card.title}</h3>
+        <p>{card.body}</p>
+      </article>
+    ))}
   </div>
 </section>
 
-<section class="stress-tests">
-  <h3>⚡ Stress Test Results</h3>
-  <p class="stress-intro">
-    Validated under extreme load conditions using k6. The system maintains stable performance
-    even when processing thousands of concurrent banking transactions.
-  </p>
+<section class="stress-tests" aria-labelledby="stress-title">
+  <div class="stress-header">
+    <p class="section-kicker">benchmark dossier</p>
+    <h2 id="stress-title">Numbers stay attached to run artifacts.</h2>
+    <p class="stress-intro">
+      k6 reports are published as static artifacts. Treat these values as historical proof points,
+      then open the reports to inspect the exact run output before making performance decisions.
+    </p>
+  </div>
 
-  <div class="stress-metrics">
-    {stressTestMetrics.map(metric => (
-      <div class="stress-metric">
+  <div class="stress-metrics" aria-label="Benchmark proof points">
+    {benchmarkMetrics.map((metric) => (
+      <article class="stress-metric">
         <span class="metric-value">{metric.value}</span>
         <span class="metric-label">{metric.label}</span>
-      </div>
+        <span class="metric-context">{metric.context}</span>
+      </article>
     ))}
   </div>
 
-  <div class="stress-links">
-    <a href="https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/main-release.yml" class="stress-link" target="_blank" rel="noopener noreferrer">
-      <span>📊</span> View CI/CD Stress Tests
-    </a>
-    <a href="./docs/" class="stress-link">
-      <span>📖</span> Documentation
-    </a>
+  <div class="report-spotlight">
+    <div>
+      <p class="section-kicker">latest artifact</p>
+      {latestReport ? (
+        <>
+          <h3>{latestReport.date} · {latestReport.time}</h3>
+          <p>Open the newest archived k6 HTML report, then compare it with the workflow that generated it.</p>
+        </>
+      ) : (
+        <>
+          <h3>No local reports found</h3>
+          <p>The reports directory is empty in this checkout.</p>
+        </>
+      )}
+    </div>
+    <div class="stress-links">
+      {latestReport && (
+        <a href={`./reports/${latestReport.file}`} class="stress-link">Open latest report</a>
+      )}
+      <a href="https://github.com/jonathanperis/rinha2-back-end-python/actions/workflows/main-release.yml" class="stress-link" target="_blank" rel="noopener noreferrer">
+        View release workflow
+      </a>
+      <a href="./docs/performance/" class="stress-link">Read performance notes</a>
+    </div>
   </div>
 
-  <div class="reports-section">
-    <h4>📈 Historical Reports</h4>
+  <div class="reports-section" aria-labelledby="reports-title">
+    <div class="reports-heading">
+      <h3 id="reports-title">Recent k6 reports</h3>
+      <p>{allReports.length} archived stress test runs. Latest first.</p>
+    </div>
     <div class="reports-grid">
-      {recentReports.map(report => (
-        <a href={`./reports/${report.file}`} class="report-link">
+      {recentReports.map((report) => (
+        <a href={`./reports/${report.file}`} class="report-link" aria-label={report.label}>
           <span class="report-date">{report.date}</span>
           <span class="report-time">{report.time}</span>
         </a>
       ))}
     </div>
-    <p class="reports-note">{allReports.length} stress test runs archived • <a href="./reports/">View all reports →</a></p>
+    <p class="reports-note"><a href="./reports/">View all benchmark reports</a></p>
   </div>
 </section>
