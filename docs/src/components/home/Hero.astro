@@ -1,21 +1,45 @@
 ---
+const stackBadges = ['Python 3.14', 'Flask 3.1', 'Gunicorn', 'PostgreSQL procedures', 'NGINX', 'k6 CI'];
 ---
 
-<section class="hero">
-  <h1>Slow is Smooth.<br><span>Smooth is Fast.</span></h1>
-  <p class="tagline">
-    Warm, approachable, yet incredibly powerful. Python 3 implementation of the Rinha de Backend 2024/Q1 challenge.
-  </p>
+<section class="hero" aria-labelledby="homepage-title">
+  <div class="hero-copy">
+    <p class="eyebrow">Rinha de Backend 2024/Q1 · Python pressure lab</p>
+    <h1 id="homepage-title">Slow is Smooth.<br /><span>Smooth is Fast.</span></h1>
+    <p class="tagline">
+      A Flask/Gunicorn/PostgreSQL implementation tuned for a banking API challenge:
+      two Python APIs, one NGINX edge, PostgreSQL atomic procedures, and a 1.5 CPU / 550MB envelope.
+    </p>
 
-  <div class="badges">
-    <span class="badge">Python 3</span>
-    <span class="badge">Asyncio</span>
-    <span class="badge">Nginx</span>
-    <span class="badge">PostgreSQL</span>
+    <ul class="badges" aria-label="Implementation stack">
+      {stackBadges.map((badge) => (
+        <li class="badge">{badge}</li>
+      ))}
+    </ul>
+
+    <div class="ctas" aria-label="Primary actions">
+      <a href="./docs/" class="btn btn-primary">Read the implementation notes</a>
+      <a href="./reports/" class="btn btn-secondary">Open benchmark reports</a>
+    </div>
   </div>
 
-  <div class="ctas">
-    <a href="./docs/" class="btn btn-primary">View Documentation &rarr;</a>
-    <a href="https://github.com/jonathanperis/rinha2-back-end-python" class="btn btn-secondary">View on GitHub &rarr;</a>
-  </div>
+  <aside class="hero-proof" aria-label="Challenge proof summary">
+    <div class="function-signature">
+      <span class="keyword">def</span> <span class="function-name">rinha2_python</span><span class="punctuation">():</span>
+    </div>
+    <dl class="hero-proof-grid">
+      <div>
+        <dt>Resource limit</dt>
+        <dd>1.5 CPU / 550MB</dd>
+      </div>
+      <div>
+        <dt>Runtime path</dt>
+        <dd>NGINX → 2 Flask APIs → PostgreSQL</dd>
+      </div>
+      <div>
+        <dt>Validation</dt>
+        <dd>k6 stress runs archived in CI reports</dd>
+      </div>
+    </dl>
+  </aside>
 </section>
