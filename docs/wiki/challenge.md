@@ -4,23 +4,48 @@
 
 The Rinha de Backend is a Brazilian backend programming challenge. The 2024/Q1 edition simulates a fictional bank called "Rinha Financeira" that manages up to 5 named clients, each seeded at startup with a credit limit and initial balance.
 
-## Endpoints
+The interesting part is not the endpoint count; it is the combination of high write contention, strict response semantics, and a shared container budget small enough to punish waste.
 
-Three API endpoints are implemented:
+## Endpoint Contract
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/clientes/{id}/transacoes` | POST | Submit a debit or credit transaction for a client (IDs 1-5) |
-| `/clientes/{id}/extrato` | GET | Get a client's current balance, credit limit, and recent transactions |
-| `/healthz` | GET | Health check endpoint |
+| Endpoint | Method | Success | Validation / rejection |
+|----------|--------|---------|------------------------|
+| `/clientes/{id}/transacoes` | `POST` | `200` with `limite` and updated `saldo` | `404` for unknown client, `422` for invalid payload or exceeded limit |
+| `/clientes/{id}/extrato` | `GET` | `200` with `saldo` and recent transactions | `404` for unknown client |
+| `/healthz` | `GET` | `200` with `Healthy` | Used by container and CI smoke checks |
+
+### Transaction payload
+
+```json
+{
+  "valor": 1000,
+  "tipo": "c",
+  "descricao": "deposito"
+}
+```
+
+Runtime validation in `src/WebApi/app.py` keeps the contract narrow:
+
+- `valor` must be a positive integer value.
+- `tipo` must be `c` for credit or `d` for debit.
+- `descricao` must be a non-empty string with at most 10 characters.
+- Client IDs are fixed to `1` through `5`.
+
+## Consistency Requirement
+
+Debit requests must never push a client past their configured credit limit. This implementation keeps that invariant in the database by calling `InsertTransacao()` for the balance update and limit check in one atomic operation.
 
 ## Constraints
 
 The challenge imposes strict resource limits across all containers combined:
 
-- **1.5 CPU total** shared across all services
-- **550MB RAM total** shared across all services
-- The system is stress tested using Grafana k6 with concurrent users submitting transactions and querying statements
+| Resource | Total budget | Where it goes in this repo |
+|----------|--------------|----------------------------|
+| CPU | `1.5` | API instances, PostgreSQL, and NGINX |
+| Memory | `550MB` | API instances, PostgreSQL, and NGINX |
+| Load | k6 stress script | Concurrent transactions and statement requests |
+
+The observability sidecars and k6 runner are useful during local experiments, but the challenge budget centers on the application stack under test.
 
 ## Source
 
