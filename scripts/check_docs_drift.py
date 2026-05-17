@@ -69,7 +69,7 @@ def main() -> int:
 
     docs = {
         "README.md": read("README.md"),
-        "CLAUDE.md": read("CLAUDE.md"),
+        "AGENTS.md": read("AGENTS.md"),
         "docs/wiki/home.md": read("docs/wiki/home.md"),
         "docs/wiki/architecture.md": read("docs/wiki/architecture.md"),
         "docs/wiki/getting-started.md": read("docs/wiki/getting-started.md"),
@@ -88,13 +88,13 @@ def main() -> int:
         "psycopg2-binary": versions["psycopg2-binary"],
     }
     for label, version in expected_versions.items():
-        for where in ["README.md", "CLAUDE.md", "docs/wiki/architecture.md"]:
+        for where in ["README.md", "AGENTS.md", "docs/wiki/architecture.md"]:
             require(docs[where], version, where)
 
     # Runtime shape from source/config.
     require(dockerfile, "python:3.14-slim", "src/WebApi/Dockerfile")
     require(dockerfile, '"--workers=4", "--threads=2"', "src/WebApi/Dockerfile")
-    for where in ["README.md", "CLAUDE.md", "docs/wiki/home.md", "docs/wiki/architecture.md"]:
+    for where in ["README.md", "AGENTS.md", "docs/wiki/home.md", "docs/wiki/architecture.md"]:
         if where in {"README.md", "docs/wiki/architecture.md"}:
             require(docs[where], "| Python | 3.14 |", where)
         else:
