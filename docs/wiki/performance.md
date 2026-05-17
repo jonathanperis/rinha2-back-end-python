@@ -24,9 +24,9 @@ The implementation optimizes for the contest workload by keeping each layer focu
 
 Published reports are the source of truth for run-level performance evidence:
 
-- [Stress test report index](/rinha2-back-end-python/reports/) lists every archived HTML report.
-- The latest entries come from the mainline release workflow after container verification.
-- Compare reports by commit context and workflow timing, not just by a single latency number.
+- [Stress test report index](/rinha2-back-end-python/reports/) lists committed historical HTML reports from `docs/public/reports/`.
+- New non-doc mainline releases also upload a fresh `stress-test-report` artifact from the production k6 run; promote artifacts into `docs/public/reports/` only when you want them to become part of the published historical archive.
+- Compare published reports and workflow artifacts by commit context and workflow timing, not just by a single latency number.
 
 When evaluating a run, inspect:
 
@@ -50,5 +50,5 @@ This is a deliberately constrained system, so performance conclusions should sta
 ## Useful Next Reads
 
 - [Architecture](/rinha2-back-end-python/docs/architecture/) for the runtime and stored-procedure boundaries.
-- [CI/CD Pipeline](/rinha2-back-end-python/docs/ci-cd-pipeline/) for how reports are produced and published.
+- [CI/CD Pipeline](/rinha2-back-end-python/docs/ci-cd-pipeline/) for how reports are produced, uploaded, and published.
 - [Reports](/rinha2-back-end-python/reports/) for archived k6 HTML output.

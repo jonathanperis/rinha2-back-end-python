@@ -11,7 +11,7 @@ High-performance banking API built with Python/Flask/Gunicorn for the Rinha de B
 | Python 3.14 | Language |
 | Flask 3.1.3 | Web framework |
 | Gunicorn 25.3.0 | WSGI HTTP server (4 workers, 2 threads) |
-| psycopg2-binary 2.9.11 | PostgreSQL adapter |
+| psycopg2-binary 2.9.12 | PostgreSQL adapter |
 | PostgreSQL 16.7 | Database with stored procedures |
 | NGINX 1.27 | Load balancer (least_conn) |
 | Docker | python:3.14-slim base |
@@ -84,9 +84,9 @@ rinha2-back-end-python/
 
 ## CI/CD
 
-- **PR:** Docker build + health check (20 retries)
-- **Main:** Multi-platform Docker push (amd64/arm64) to GHCR + k6 load test + GitHub Pages report
-- **Image:** `ghcr.io/jonathanperis/rinha2-back-end-python:latest`
+- **PR:** Docker Compose build/start with `docker compose -f ./docker-compose.yml up nginx --wait`, `/healthz` smoke check, and CodeQL
+- **Main:** Non-doc pushes build/push amd64 and arm64 GHCR images, merge `latest`, run the production compose health check, run k6, and upload the stress-test HTML as a workflow artifact
+- **Images:** `ghcr.io/jonathanperis/rinha2-back-end-python:latest` (multi-arch manifest) and `:latest-arm64`
 
 ---
 

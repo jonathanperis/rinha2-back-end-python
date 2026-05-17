@@ -83,7 +83,7 @@ The statement response contains the current balance envelope and the recent tran
 docker compose up k6 --build --force-recreate
 ```
 
-The compose file supports a local observability loop with InfluxDB, Prometheus, and Grafana. The k6 service defaults to `MODE=dev` for local dashboard/export behavior; release automation uses the production report path that archives HTML output under the public reports directory.
+The compose file supports a local observability loop with InfluxDB, Prometheus, and Grafana. The k6 service defaults to `MODE=dev` for local dashboard/export behavior; the production compose file uses `MODE=prod` and writes `./prod/conf/stress-test/reports/stress-test-report.html`, which `main-release.yml` uploads as the `stress-test-report` workflow artifact.
 
 ## Troubleshooting Checklist
 

@@ -64,7 +64,7 @@ const jsonLd = {
     <meta name="twitter:creator" content="@jperis_silva" />
 
     <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <title>{title}</title>
     <Analytics />
