@@ -19,7 +19,7 @@ Python implementation of the Brazilian backend challenge [Rinha de Backend 2024/
 | Python | 3.14 | Language runtime |
 | Flask | 3.1.3 | Web framework |
 | Gunicorn | 25.3.0 | WSGI HTTP server (4 workers, 2 threads) |
-| psycopg2-binary | 2.9.11 | PostgreSQL adapter |
+| psycopg2-binary | 2.9.12 | PostgreSQL adapter |
 | PostgreSQL | 16.7 | Database with stored procedures |
 | NGINX | 1.27 | Reverse proxy / load balancer (least_conn) |
 | Docker | - | Containerization and orchestration |
@@ -43,7 +43,7 @@ NGINX (:9999, least_conn)
 - UNLOGGED tables for maximum write performance
 - Nginx least_conn load balancing across two API instances
 - SimpleConnectionPool (1-10) for efficient connection management
-- All requests under 800ms at 250MB RAM usage (60% below limit)
+- Historical k6 HTML reports are published under the GitHub Pages report index for source-backed performance review
 
 ## Getting Started
 
@@ -95,12 +95,12 @@ rinha2-back-end-python/
 
 | Workflow | Trigger | Description |
 |----------|---------|-------------|
-| Build Check | Pull requests | Docker build + health check (20 retries) |
-| Main Release | Push to main | Multi-platform Docker push (amd64/arm64) to GHCR + k6 load test |
+| Build Check | Pull requests | Docker Compose build/start via `up nginx --wait` + `/healthz` smoke check |
+| Main Release | Push to main except `docs/**` | Multi-platform Docker push (`latest`/`latest-arm64` → multi-arch `latest`), production compose health check, and k6 report artifact upload |
 | CodeQL | Push to main, PRs, weekly | Security and quality analysis |
-| Deploy | Push to main | Deploy docs to GitHub Pages via Actions |
+| Deploy to GitHub Pages | Push to main | Reusable Pages workflow builds and deploys `docs/` with Bun |
 
-Container image: `ghcr.io/jonathanperis/rinha2-back-end-python:latest`
+Container images: `ghcr.io/jonathanperis/rinha2-back-end-python:latest` (multi-arch manifest) and `:latest-arm64` (arm64 source image).
 
 ## License
 

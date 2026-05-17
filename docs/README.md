@@ -12,6 +12,8 @@ Run from this directory (`docs/`):
 | `bun run dev` | Start dev server |
 | `bun run build` | Build to `./out/` |
 | `bun run preview` | Preview production build locally |
+| `bun run lint` | Run `astro check` diagnostics |
+| `bun run check:drift` | Verify README/wiki source facts against code, Compose, and workflows |
 
 ## Environment
 

@@ -4,12 +4,12 @@ title: Home
 
 # Documentation Hub
 
-Python 3.14 implementation for the Rinha de Backend 2024/Q1 challenge. This site documents how the fictional bank API keeps the HTTP layer thin, pushes balance consistency into PostgreSQL stored procedures, and publishes k6 evidence after mainline releases.
+Python 3.14 implementation for the Rinha de Backend 2024/Q1 challenge. This site documents how the fictional bank API keeps the HTTP layer thin, pushes balance consistency into PostgreSQL stored procedures, and keeps k6 evidence tied to committed report pages and release-workflow artifacts.
 
 <div class="doc-hero-panel">
   <p class="eyebrow">source-backed map</p>
   <h2>What to read, and why it matters</h2>
-  <p>The public docs are organized around the real runtime: two Flask/Gunicorn API containers behind NGINX, one PostgreSQL 16.7 database, and k6 reports archived from the release workflow.</p>
+  <p>The public docs are organized around the real runtime: two Flask/Gunicorn API containers behind NGINX, one PostgreSQL 16.7 database, and historical k6 reports published from <code>docs/public/reports</code>.</p>
 </div>
 
 <div class="stat-grid">
@@ -51,7 +51,7 @@ Python 3.14 implementation for the Rinha de Backend 2024/Q1 challenge. This site
 | [Challenge](challenge) | API contract and constraints | Original Rinha spec + `src/WebApi/app.py` |
 | [Architecture](architecture) | Runtime topology and consistency model | `docker-compose.yml`, `nginx.conf`, SQL init scripts |
 | [Getting Started](getting-started) | Local execution and smoke checks | Docker Compose stack |
-| [Performance](performance) | Benchmark interpretation and report links | k6 report archive |
+| [Performance](performance) | Benchmark interpretation and report links | `docs/public/reports`, k6 artifact uploads |
 | [CI/CD Pipeline](ci-cd-pipeline) | Release, checks, Pages deployment | `.github/workflows/*` |
 
 ## Implementation Signals
@@ -60,7 +60,7 @@ Python 3.14 implementation for the Rinha de Backend 2024/Q1 challenge. This site
 - `InsertTransacao()` performs balance updates and limit checks atomically with row-level locking.
 - `GetSaldoClienteById()` returns statement-ready JSON so the API can avoid heavy response shaping.
 - NGINX uses `least_conn` to distribute load between two identical API instances.
-- Release automation publishes GHCR images, runs container checks, executes k6, and deploys this documentation to GitHub Pages.
+- Release automation publishes GHCR images, runs container checks, executes k6, uploads the latest stress-test artifact, and deploys this documentation to GitHub Pages.
 
 ## External Links
 

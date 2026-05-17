@@ -37,12 +37,12 @@ function parseReportMeta(filename: string) {
         <main class="reports-main">
             <header class="reports-header">
                 <h1>Stress Test Reports</h1>
-                <p>{reports.length} runs archived — k6 load tests executed on every push to <code>main</code></p>
+                <p>{reports.length} committed historical runs archived — new non-doc mainline releases upload fresh k6 artifacts</p>
             </header>
 
             <div class="reports-list">
                 {reports.map((file) => {
-                    const { date, time, datetime } = parseReportMeta(file);
+                    const { date, time } = parseReportMeta(file);
                     return (
                         <a href={`./${file}`} class="report-entry">
                             <span class="report-entry-date">{date}</span>
