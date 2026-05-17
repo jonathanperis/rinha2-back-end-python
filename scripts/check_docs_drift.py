@@ -76,6 +76,8 @@ def main() -> int:
         "docs/wiki/performance.md": read("docs/wiki/performance.md"),
         "docs/wiki/ci-cd-pipeline.md": read("docs/wiki/ci-cd-pipeline.md"),
         "docs/wiki/challenge.md": read("docs/wiki/challenge.md"),
+        "docs/src/components/home/Hero.astro": read("docs/src/components/home/Hero.astro"),
+        "docs/src/components/home/Dashboard.astro": read("docs/src/components/home/Dashboard.astro"),
         "docs/src/pages/reports/index.astro": read("docs/src/pages/reports/index.astro"),
     }
 
@@ -143,6 +145,8 @@ def main() -> int:
         "archives HTML output under the public reports directory",
         "latest entries come from the mainline release workflow",
         "k6 load tests executed on every push to",
+        "archived in CI reports",
+        "CI stress tests · report archive",
     ]
     for where, text in docs.items():
         for phrase in stale_phrases:
