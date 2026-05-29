@@ -10,7 +10,7 @@ The interesting part is not the endpoint count; it is the combination of high wr
 
 | Endpoint | Method | Success | Validation / rejection |
 |----------|--------|---------|------------------------|
-| `/clientes/{id}/transacoes` | `POST` | `200` with `limite` and updated `saldo` | `404` for unknown client, `422` for invalid payload or exceeded limit |
+| `/clientes/{id}/transacoes` | `POST` | `200` with `limite` and updated `saldo` | `400` for a missing JSON payload, `404` for unknown client, `422` for invalid transaction fields or exceeded limit |
 | `/clientes/{id}/extrato` | `GET` | `200` with `saldo` and recent transactions | `404` for unknown client |
 | `/healthz` | `GET` | `200` with `Healthy` | Used by container and CI smoke checks |
 
@@ -30,6 +30,16 @@ Runtime validation in `src/WebApi/app.py` keeps the contract narrow:
 - `tipo` must be `c` for credit or `d` for debit.
 - `descricao` must be a non-empty string with at most 10 characters.
 - Client IDs are fixed to `1` through `5`.
+
+The runtime client table is intentionally static and mirrors the seed data in `docker-entrypoint-initdb.d/rinha.dump.sql`:
+
+| Client ID | Credit limit | Initial balance |
+|-----------|--------------|-----------------|
+| `1` | `100000` | `0` |
+| `2` | `80000` | `0` |
+| `3` | `1000000` | `0` |
+| `4` | `10000000` | `0` |
+| `5` | `500000` | `0` |
 
 ## Consistency Requirement
 

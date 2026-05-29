@@ -83,7 +83,34 @@ The statement response contains the current balance envelope and the recent tran
 docker compose up k6 --build --force-recreate
 ```
 
-The compose file supports a local observability loop with InfluxDB, Prometheus, and Grafana. The k6 service defaults to `MODE=dev` for local dashboard/export behavior; the production compose file uses `MODE=prod` and writes `./prod/conf/stress-test/reports/stress-test-report.html`, which `main-release.yml` uploads as the `stress-test-report` workflow artifact.
+The compose file supports a local observability loop with InfluxDB, Prometheus, Grafana, postgres-exporter, and the k6 web dashboard. The k6 service defaults to `MODE=dev` for local dashboard/export behavior; the production compose file uses `MODE=prod` and writes `./prod/conf/stress-test/reports/stress-test-report.html`, which `main-release.yml` uploads as the `stress-test-report` workflow artifact.
+
+### Dev vs Production Compose
+
+| Concern | `docker-compose.yml` | `prod/docker-compose.yml` |
+|---------|----------------------|---------------------------|
+| API image source | Builds from `./src/WebApi` | Pulls `ghcr.io/jonathanperis/rinha2-back-end-python:latest` |
+| API host ports | `6665:8080` and `6666:8080` for direct instance access | `8081:8080` and `8082:8080` for direct instance access |
+| Public ingress | NGINX on `9999:9999` | NGINX on `9999:9999` |
+| k6 mode | `MODE=dev`, InfluxDB export enabled | `MODE=prod`, HTML report export enabled |
+| Report output | local k6 dashboard / InfluxDB data | `./prod/conf/stress-test/reports/stress-test-report.html` |
+
+### Local Observability Ports and Credentials
+
+| Service | Port | Notes |
+|---------|------|-------|
+| Grafana | `3000` | Anonymous admin is enabled for the local dashboard loop. |
+| Prometheus | `9090` | Reads `./prometheus/prometheus.yml`. |
+| InfluxDB | `8086` | Requires `INFLUXDB_PASSWORD` and `INFLUXDB_TOKEN`. |
+| postgres-exporter | `9187` | Exposes PostgreSQL metrics to Prometheus. |
+| k6 web dashboard | `5665` | Enabled by `K6_WEB_DASHBOARD=true`. |
+
+Set the InfluxDB values before starting k6/observability services, for example:
+
+```bash
+export INFLUXDB_PASSWORD=local-rinha-password
+export INFLUXDB_TOKEN=local-rinha-token
+```
 
 ## Troubleshooting Checklist
 

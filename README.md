@@ -71,9 +71,23 @@ docker compose up k6 --build --force-recreate
 
 | Method | Path | Description | Status Codes |
 |--------|------|-------------|-------------|
-| POST | `/clientes/{id}/transacoes` | Submit debit or credit transaction | 200, 404, 422 |
+| POST | `/clientes/{id}/transacoes` | Submit debit or credit transaction | 200, 400, 404, 422 |
 | GET | `/clientes/{id}/extrato` | Get account balance statement | 200, 404 |
 | GET | `/healthz` | Health check | 200 |
+
+### Fixed Client Limits
+
+The challenge seed data and Flask guard both define exactly five clients:
+
+| Client ID | Credit limit |
+|-----------|--------------|
+| `1` | `100000` |
+| `2` | `80000` |
+| `3` | `1000000` |
+| `4` | `10000000` |
+| `5` | `500000` |
+
+`POST /clientes/{id}/transacoes` returns `400` when no JSON payload is supplied, `422` for malformed transaction fields or credit-limit rejection, and `404` for unknown client IDs.
 
 ## Project Structure
 

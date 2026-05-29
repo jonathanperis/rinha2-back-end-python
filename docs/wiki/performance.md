@@ -16,9 +16,11 @@ The implementation optimizes for the contest workload by keeping each layer focu
 
 - **Thin Python path:** Flask validates input and delegates consistency-sensitive work to SQL.
 - **Database-owned invariants:** `InsertTransacao()` handles balance updates and limit rejection atomically.
-- **Compact statement reads:** `GetSaldoClienteById()` returns statement data already shaped for the API response.
+- **Compact statement reads:** `GetSaldoClienteById()` returns statement data already shaped for the API response, ordered by `Id DESC` and limited to the latest `10` rows.
 - **Two API replicas:** NGINX uses `least_conn` so a busy worker pool does not become the only ingress path.
 - **Durability trade-offs:** PostgreSQL write-safety settings are relaxed for benchmark throughput, not for production banking data.
+- **UNLOGGED hot tables:** `Clientes` and `Transacoes` are unlogged, and `Transacoes` uses `fillfactor = 90`, trading crash durability for faster contest writes.
+- **Targeted statement index:** `IX_Transacoes_ClienteId_Id_Desc` backs the per-client latest-transaction lookup pattern.
 
 ## Reading the Reports
 

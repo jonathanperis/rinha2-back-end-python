@@ -1,6 +1,6 @@
 # Docs
 
-Astro static site deployed to GitHub Pages.
+Astro `6.4.0` static site deployed to GitHub Pages. Markdown pages use Astro's `markdown.processor` API through `@astrojs/markdown-satteri`.
 
 ## Commands
 
@@ -13,7 +13,7 @@ Run from this directory (`docs/`):
 | `bun run build` | Build to `./out/` |
 | `bun run preview` | Preview production build locally |
 | `bun run lint` | Run `astro check` diagnostics |
-| `bun run check:drift` | Verify README/wiki source facts against code, Compose, and workflows |
+| `bun run check:drift` | Verify README/wiki source facts against code, SQL, Compose, workflows, and docs package metadata |
 
 ## Environment
 

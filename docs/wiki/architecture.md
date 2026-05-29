@@ -55,6 +55,16 @@ Business logic is implemented in PostgreSQL stored procedures (`InsertTransacao`
 - Recent-transaction selection for statement responses.
 - JSON-shaped statement data returned to the API.
 
+The physical schema is also tuned for the benchmark workload:
+
+| Element | Source-backed behavior |
+|---------|------------------------|
+| `Clientes` table | `CREATE UNLOGGED TABLE`, seeded with five fixed client IDs and limits. |
+| `Transacoes` table | `CREATE UNLOGGED TABLE ... WITH (fillfactor = 90)` for write-heavy inserts. |
+| `InsertTransacao()` | Uses `SELECT ... FOR UPDATE` on the client row to serialize concurrent balance changes for the same client. |
+| `GetSaldoClienteById()` | Returns the current balance plus the latest `10` transactions as `jsonb`. |
+| `IX_Transacoes_ClienteId_Id_Desc` | Composite index on `(ClienteId, Id DESC)` so statement reads can fetch recent transactions for one client efficiently. |
+
 For benchmark speed, the database is tuned with durability trade-offs:
 
 - `synchronous_commit=0` — do not wait for WAL flush.
