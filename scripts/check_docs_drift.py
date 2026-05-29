@@ -56,11 +56,37 @@ def app_clients() -> dict[int, int]:
     fail("src/WebApi/app.py: clientes dict not found")
 
 
+def sql_seed_clients(sql: str) -> dict[int, int]:
+    match = re.search(
+        r'COPY public\."Clientes" \("Id", "Limite", "SaldoInicial"\) FROM stdin;\n(.*?)\n\\\.',
+        sql,
+        re.S,
+    )
+    if not match:
+        fail('rinha.dump.sql: Clientes seed COPY block not found')
+    assert match is not None
+    clients: dict[int, int] = {}
+    for line in match.group(1).splitlines():
+        client_id, limit, initial_balance = line.split("\t")
+        if int(initial_balance) != 0:
+            fail(f"rinha.dump.sql: expected zero initial balance for client {client_id}")
+        clients[int(client_id)] = int(limit)
+    return clients
+
+
+def require_client_limit_table(text: str, where: str, clients: dict[int, int]) -> None:
+    for client_id, limit in clients.items():
+        require(text, f"| `{client_id}` | `{limit}`", where)
+
+
 def main() -> int:
     versions = package_versions()
     dockerfile = read("src/WebApi/Dockerfile")
     compose = read("docker-compose.yml")
     prod_compose = read("prod/docker-compose.yml")
+    sql = read("docker-entrypoint-initdb.d/rinha.dump.sql")
+    docs_package = read("docs/package.json")
+    astro_config = read("docs/astro.config.mjs")
     build_check = read(".github/workflows/build-check.yml")
     main_release = read(".github/workflows/main-release.yml")
     deploy = read(".github/workflows/deploy.yml")
@@ -69,6 +95,7 @@ def main() -> int:
 
     docs = {
         "README.md": read("README.md"),
+        "docs/README.md": read("docs/README.md"),
         "AGENTS.md": read("AGENTS.md"),
         "docs/wiki/home.md": read("docs/wiki/home.md"),
         "docs/wiki/architecture.md": read("docs/wiki/architecture.md"),
@@ -105,7 +132,37 @@ def main() -> int:
     clients = app_clients()
     if clients != {1: 100000, 2: 80000, 3: 1000000, 4: 10000000, 5: 500000}:
         fail(f"src/WebApi/app.py: unexpected clientes dict: {clients}")
+    if sql_seed_clients(sql) != clients:
+        fail("rinha.dump.sql: seeded client limits do not match app.py clientes dict")
     require(docs["docs/wiki/challenge.md"], "Client IDs are fixed to `1` through `5`", "docs/wiki/challenge.md")
+    require(docs["README.md"], "| POST | `/clientes/{id}/transacoes` | Submit debit or credit transaction | 200, 400, 404, 422 |", "README.md")
+    require(docs["docs/wiki/challenge.md"], "`400` for a missing JSON payload", "docs/wiki/challenge.md")
+    for where in ["README.md", "docs/wiki/challenge.md"]:
+        require_client_limit_table(docs[where], where, clients)
+
+    # SQL physical design and stored-procedure semantics reflected in docs.
+    for needle in [
+        'CREATE UNLOGGED TABLE public."Clientes"',
+        'CREATE UNLOGGED TABLE public."Transacoes"',
+        'WITH (fillfactor = 90)',
+        'CREATE INDEX "IX_Transacoes_ClienteId_Id_Desc"',
+        'FOR UPDATE',
+        'ORDER BY "Id" DESC',
+        'LIMIT 10',
+    ]:
+        require(sql, needle, "docker-entrypoint-initdb.d/rinha.dump.sql")
+    for needle in ["CREATE UNLOGGED TABLE", "IX_Transacoes_ClienteId_Id_Desc", "FOR UPDATE", "latest `10`"]:
+        require(docs["docs/wiki/architecture.md"], needle, "docs/wiki/architecture.md")
+    for needle in ["UNLOGGED hot tables", "IX_Transacoes_ClienteId_Id_Desc", "latest `10`"]:
+        require(docs["docs/wiki/performance.md"], needle, "docs/wiki/performance.md")
+
+    # Docs package metadata should reflect the Astro 6.4 Sätteri pipeline.
+    require(docs_package, '"astro": "6.4.0"', "docs/package.json")
+    require(docs_package, '"@astrojs/markdown-satteri"', "docs/package.json")
+    require(astro_config, "markdown:", "docs/astro.config.mjs")
+    require(astro_config, "processor: satteri()", "docs/astro.config.mjs")
+    require(docs["docs/README.md"], "Astro `6.4.0`", "docs/README.md")
+    require(docs["docs/README.md"], "@astrojs/markdown-satteri", "docs/README.md")
 
     # Compose resource envelope and service behavior.
     for needle in ['cpus: "0.4"', 'memory: "100MB"', 'cpus: "0.5"', 'memory: "330MB"', 'cpus: "0.2"', 'memory: "20MB"']:
@@ -113,8 +170,22 @@ def main() -> int:
     require(compose, "postgres:16.7-alpine", "docker-compose.yml")
     require(compose, "nginx:1.27-alpine", "docker-compose.yml")
     require(compose, "MODE=dev", "docker-compose.yml")
+    for needle in ["6665:8080", "6666:8080", "9187:9187", "9090:9090", "3000:3000", "8086:8086", "5665:5665", "INFLUXDB_PASSWORD", "INFLUXDB_TOKEN"]:
+        require(compose, needle, "docker-compose.yml")
     require(prod_compose, "MODE=prod", "prod/docker-compose.yml")
+    for needle in ["8081:8080", "8082:8080", "9999:9999"]:
+        require(prod_compose, needle, "prod/docker-compose.yml")
     require(prod_compose, "K6_WEB_DASHBOARD_EXPORT=./reports/stress-test-report.html", "prod/docker-compose.yml")
+    for needle in [
+        "Dev vs Production Compose",
+        "6665:8080",
+        "8081:8080",
+        "INFLUXDB_PASSWORD",
+        "INFLUXDB_TOKEN",
+        "postgres-exporter",
+        "k6 web dashboard",
+    ]:
+        require(docs["docs/wiki/getting-started.md"], needle, "docs/wiki/getting-started.md")
 
     # Workflow facts that docs should not overstate.
     require(build_check, "docker compose -f ./docker-compose.yml up nginx --wait", "build-check.yml")
