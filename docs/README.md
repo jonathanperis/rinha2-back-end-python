@@ -1,6 +1,6 @@
 # Docs
 
-Astro `6.4.0` static site deployed to GitHub Pages. Markdown pages use Astro's `markdown.processor` API through `@astrojs/markdown-satteri`.
+Astro `7.0.0` static site deployed to GitHub Pages with Vite `8`. Markdown pages use Astro 7's default Rust-powered Sätteri pipeline; the site stays `output: 'static'` for GitHub Pages, so server routing/cache providers and `src/fetch.ts` are intentionally not configured here.
 
 ## Commands
 
@@ -10,6 +10,7 @@ Run from this directory (`docs/`):
 |---|---|
 | `bun install` | Install dependencies |
 | `bun run dev` | Start dev server |
+| `bun run dev:background` | Start Astro 7's managed background dev server for agent-friendly local previews |
 | `bun run build` | Build to `./out/` |
 | `bun run preview` | Preview production build locally |
 | `bun run lint` | Run `astro check` diagnostics |

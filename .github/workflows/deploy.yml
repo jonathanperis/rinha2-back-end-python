@@ -16,3 +16,4 @@ jobs:
     secrets: inherit
     with:
       package-manager: bun
+      node-version: '24'

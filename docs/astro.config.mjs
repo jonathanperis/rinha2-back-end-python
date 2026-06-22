@@ -1,5 +1,4 @@
 import { defineConfig } from 'astro/config';
-import { satteri } from '@astrojs/markdown-satteri';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -11,9 +10,6 @@ export default defineConfig({
   outDir: 'out',
   site: 'https://jonathanperis.github.io',
   base: isProd ? '/rinha2-back-end-python' : '',
-  markdown: {
-    processor: satteri(),
-  },
   vite: {
     plugins: [tailwindcss()],
   },

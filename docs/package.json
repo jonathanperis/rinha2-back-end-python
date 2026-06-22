@@ -5,21 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "dev:background": "astro dev --background",
     "build": "astro build",
     "preview": "astro preview",
     "lint": "astro check",
     "check:drift": "python3 ../scripts/check_docs_drift.py"
   },
   "dependencies": {
-    "@astrojs/markdown-satteri": "^0.2.1",
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "6.4.0"
+    "astro": "7.0.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@tailwindcss/vite": "^4",
     "eslint": "^9",
     "tailwindcss": "^4",
-    "typescript": "^6"
+    "typescript": "^6",
+    "vite": "^8.0.13"
   }
 }
