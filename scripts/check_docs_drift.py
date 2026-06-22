@@ -156,13 +156,18 @@ def main() -> int:
     for needle in ["UNLOGGED hot tables", "IX_Transacoes_ClienteId_Id_Desc", "latest `10`"]:
         require(docs["docs/wiki/performance.md"], needle, "docs/wiki/performance.md")
 
-    # Docs package metadata should reflect the Astro 6.4 Sätteri pipeline.
-    require(docs_package, '"astro": "6.4.0"', "docs/package.json")
-    require(docs_package, '"@astrojs/markdown-satteri"', "docs/package.json")
-    require(astro_config, "markdown:", "docs/astro.config.mjs")
-    require(astro_config, "processor: satteri()", "docs/astro.config.mjs")
-    require(docs["docs/README.md"], "Astro `6.4.0`", "docs/README.md")
-    require(docs["docs/README.md"], "@astrojs/markdown-satteri", "docs/README.md")
+    # Docs package metadata should reflect the Astro 7 static Pages upgrade.
+    require(docs_package, '"astro": "7.0.0"', "docs/package.json")
+    require(docs_package, '"vite": "^8.0.13"', "docs/package.json")
+    forbid(docs_package, '"@astrojs/markdown-satteri"', "docs/package.json")
+    require(docs_package, '"dev:background": "astro dev --background"', "docs/package.json")
+    require(astro_config, "output: 'static'", "docs/astro.config.mjs")
+    forbid(astro_config, "processor: satteri()", "docs/astro.config.mjs")
+    forbid(astro_config, "src/fetch", "docs/astro.config.mjs")
+    require(docs["docs/README.md"], "Astro `7.0.0`", "docs/README.md")
+    require(docs["docs/README.md"], "Vite `8`", "docs/README.md")
+    require(docs["docs/README.md"], "default Rust-powered Sätteri pipeline", "docs/README.md")
+    require(docs["docs/README.md"], "server routing/cache providers and `src/fetch.ts` are intentionally not configured", "docs/README.md")
 
     # Compose resource envelope and service behavior.
     for needle in ['cpus: "0.4"', 'memory: "100MB"', 'cpus: "0.5"', 'memory: "330MB"', 'cpus: "0.2"', 'memory: "20MB"']:
